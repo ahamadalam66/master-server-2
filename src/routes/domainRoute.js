@@ -6,15 +6,31 @@ const router = express.Router()
 
 // GET All domains
 router.get('/', (req, res) => {
-	let { range } = req.query
-	range = JSON.parse(range)
+	let { filter, range, sort } = req.query
 
-	const sql = `SELECT *, COUNT(*) OVER() AS total_count FROM domains LIMIT ${range[1] -range[0]} OFFSET ${range[0]}`;
+	filter = JSON.parse(filter)
+	range = JSON.parse(range)
+	sort = JSON.parse(sort)
+
+	let sql = ''
+
+	if(filter['q']) {
+		sql = `SELECT *, COUNT(*) OVER() AS total_count 
+		FROM domains 
+		WHERE domain_name LIKE '%${filter['q']}%' 
+		ORDER BY ${sort[0]} ${sort[1]} 
+		LIMIT ${range[1] -range[0] + 1} OFFSET ${range[0]}`
+	} else {
+		sql = `SELECT *, COUNT(*) OVER() AS total_count 
+		FROM domains 
+		ORDER BY ${sort[0]} ${sort[1]} 
+		LIMIT ${range[1] -range[0] + 1} OFFSET ${range[0]}`
+	}
 
 	connection.query(sql, (err, results, fields) => {
 		res.setHeader('Access-Control-Expose-Headers', 'Content-Range')
 		if(results.length) {
-			res.setHeader('Content-Range', `domains ${range[0]}-${range[1]}/${results[0].total_count}`)
+			res.setHeader('Content-Range', `domains ${range[0]}-${range[1] + 1}/${results[0].total_count}`)
 		}
 		else {
 			res.setHeader('Content-Range', 'domain 0-0/0')

@@ -6,15 +6,21 @@ const router = express.Router()
 
 // GET All server
 router.get('/', (req, res) => {
-	let { range } = req.query
+
+	let { range, sort } = req.query
+
 	range = JSON.parse(range)
+	sort = JSON.parse(sort)
 	
-	const sql = `SELECT *, COUNT(*) OVER() AS total_count FROM servers LIMIT ${range[1] -range[0]} OFFSET ${range[0]}`;
+	const sql = `SELECT *, COUNT(*) OVER() AS total_count 
+	FROM servers 
+	ORDER BY ${sort[0]} ${sort[1]} 
+	LIMIT ${range[1] -range[0] + 1} OFFSET ${range[0]}`;
 
 	connection.query(sql, (err, results, fields) => {
 		res.setHeader('Access-Control-Expose-Headers', 'Content-Range')
 		if(results.length) {
-			res.setHeader('Content-Range', `domains ${range[0]}-${range[1]}/${results[0].total_count}`)
+			res.setHeader('Content-Range', `domains ${range[0]}-${range[1] + 1}/${results[0].total_count}`)
 		}
 		else {
 			res.setHeader('Content-Range', 'domain 0-0/0')
